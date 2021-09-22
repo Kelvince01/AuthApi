@@ -37,9 +37,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'AuthApiApp',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -80,6 +85,22 @@ DATABASES = {
     }
 }
 
+'''
+DATABASES = {
+    'default': {
+        'NAME': 'loanapp',
+        'ENGINE': 'django.db.backends.mysql',
+        'USER': 'root',
+        'PASSWORD': '',
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'OPTIONS': {
+            'autocommit': True,
+            'sql_mode': 'traditional',
+        }
+    }
+}
+'''
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -113,6 +134,10 @@ USE_L10N = True
 
 USE_TZ = True
 
+APPEND_SLASH = False
+
+DATETIME_FORMAT = '%d-%m-%Y %H:%M:%S'
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
@@ -123,3 +148,22 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CORS_ORIGIN_ALLOW_ALL = True
+
+'''CORS_ORIGIN_WHITELIST = (
+    'http://127.0.0.1:4200',
+    'http://localhost:4200',
+    'http://127.0.0.1:8081',
+    'http://127.0.0.1:8080',
+)'''
+
+AUTH_USER_MODEL = 'AuthApiApp.User'
+
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'AuthApiApp.exceptions.core_exception_handler',
+    'NON_FIELD_ERRORS_KEY': 'error',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'AuthApiApp.backends.JWTAuthentication',
+    ),
+}
