@@ -5,3 +5,5 @@
 /AuthApi/__pycache__
 /AuthApiApp/__pycache__
 /AuthApiApp/migrations
+*id_rsa
+*id_rsa.pub
