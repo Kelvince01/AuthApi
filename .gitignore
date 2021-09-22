@@ -1,0 +1,7 @@
+/env
+*.env
+*db.sqlite3
+*.vscode
+/AuthApi/__pycache__
+/AuthApiApp/__pycache__
+/AuthApiApp/migrations
