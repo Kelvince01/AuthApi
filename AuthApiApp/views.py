@@ -29,12 +29,15 @@ class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
         return Response(serializer, status=status.HTTP_200_OK)
 
     def update(self, request, *args, **kwargs):
-        serializer_data = request.data.get('user', {})
+        #serializer_data = request.data.get('user', {})
 
         # Here is that serialize, validate, save pattern we talked about
         # before.
-        serializer = self.serializer_class(
+        '''serializer = self.serializer_class(
             request.user, data=serializer_data, partial=True
+        )'''
+        serializer = self.serializer_class(
+            request.user, data=request.data, partial=True
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -89,3 +92,21 @@ class LoginAPIView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 '''
+
+
+class LoginAPIViewV2(APIView):
+    permission_classes = (AllowAny,)
+    renderer_classes = (UserJSONRenderer,)
+    serializer_class = LoginSerializer
+
+    def post(self, request):
+        user = request.data.get('user', {})
+
+        # Notice here that we do not call `serializer.save()` like we did for
+        # the registration endpoint. This is because we don't  have
+        # anything to save. Instead, the `validate` method on our serializer
+        # handles everything we need.
+        serializer = self.serializer_class(data=user)
+        serializer.is_valid(raise_exception=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)

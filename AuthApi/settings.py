@@ -40,7 +40,9 @@ INSTALLED_APPS = [
     'AuthApiApp',
     'rest_framework',
     'rest_framework.authtoken',
-    'corsheaders'
+    'corsheaders',
+    'coreapi', # Coreapi for coreapi documentation
+    'drf_yasg', # drf_yasg fro Swagger documentation
 ]
 
 MIDDLEWARE = [
@@ -166,4 +168,6 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'AuthApiApp.backends.JWTAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning'
 }
