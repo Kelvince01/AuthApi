@@ -7,3 +7,6 @@
 /AuthApiApp/migrations
 *id_rsa
 *id_rsa.pub
+*ngrok.exe
+*requirementstwo.txt
+tests.ipynb
