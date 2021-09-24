@@ -1,14 +1,24 @@
+import binascii
+import os
 import jwt
 import uuid
-
 from datetime import datetime, timedelta
-
+from django.template.loader import render_to_string
+from django.core.mail.message import EmailMultiAlternatives
 from django.conf import settings
 from django.contrib.auth.models import (
     AbstractBaseUser, BaseUserManager, PermissionsMixin
 )
 from django.db import models
+from django.utils.translation import ugettext_lazy as _
+from django.core.mail import send_mail
+from django.utils import timezone
 
+# Make part of the model eventually, so it can be edited
+EXPIRY_PERIOD = 3    # days
+
+def _generate_code():
+    return binascii.hexlify(os.urandom(20)).decode('utf-8')
 
 USER_ROLES = (
     ("Admin", "Admin"),
@@ -26,34 +36,39 @@ class UserManager(BaseUserManager):
     to create `User` objects.
     """
 
-    def create_user(self, username, email, password=None):
+    def _create_user(self, email, username, password, is_staff, is_superuser,
+                     is_verified, **extra_fields):
+        """
+        Creates and saves a User with a given email and password.
+        """
         """Create and return a `User` with an email, username and password."""
-        if username is None:
-            raise TypeError('Users must have a username.')
+        now = timezone.now()
+        if not email:
+            raise ValueError('Users must have an email address')
 
-        if email is None:
-            raise TypeError('Users must have an email address.')
+        '''if username is None:
+            raise TypeError('Users must have a username.')'''
 
-        user = self.model(username=username, email=self.normalize_email(email))
+        email = self.normalize_email(email)
+        username = username
+        user = self.model(email=email, username=username,
+                          is_staff=is_staff, is_active=True,
+                          is_superuser=is_superuser, is_verified=is_verified,
+                          last_login=now, created_at=now, **extra_fields)
         user.set_password(password)
-        user.save()
-
+        user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, email, password):
+    def create_user(self, email, username, password=None, **extra_fields):
+        return self._create_user(email, username, password, False, False, False,
+                                 **extra_fields)
+
+    def create_superuser(self, email, username, password, **extra_fields):
         """
         Create and return a `User` with superuser (admin) permissions.
         """
-        if password is None:
-            raise TypeError('Superusers must have a password.')
-
-        user = self.create_user(username, email, password)
-        user.is_superuser = True
-        user.is_staff = True
-        user.save()
-
-        return user
-
+        return self._create_user(email, username, password, True, True, True,
+                                 **extra_fields)
 
 class User(AbstractBaseUser, PermissionsMixin):
     # client_id = models.CharField(unique=True, max_length=10, blank=True, default=uuid.uuid4)
@@ -91,6 +106,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     updated_at = models.DateTimeField(auto_now=True)
 
     # More fields required by Django when specifying a custom user model.
+    is_verified = models.BooleanField(
+        _('verified'), default=False,
+        help_text=_('Designates whether this user has completed the email '
+                    'verification process to allow login.'))
 
     # The `USERNAME_FIELD` property tells us which field we will use to log in.
     # In this case we want it to be the email field.
@@ -155,4 +174,98 @@ class User(AbstractBaseUser, PermissionsMixin):
             'exp': int(dt.strftime('%S'))
         }, settings.SECRET_KEY, algorithm='HS256')
 
-        return token.decode('utf-8')
+        #return token.decode('utf-8')
+        return token
+
+    def email_user(self, subject, message, from_email=None, **kwargs):
+        """
+        Sends an email to this User.
+        """
+        send_mail(subject, message, from_email, [self.email], **kwargs)
+
+    def __str__(self):
+        return self.email
+
+
+class AbstractBaseCode(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    code = models.CharField(_('code'), max_length=40, primary_key=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        abstract = True
+
+    def send_email(self, prefix):
+        ctxt = {
+            'email': self.user.email,
+            'username': self.user.username,
+            'code': self.code
+        }
+        send_multi_format_email(prefix, ctxt, target_email=self.user.email)
+
+    def __str__(self):
+        return self.code
+
+
+class SignupCodeManager(models.Manager):
+    def create_signup_code(self, user, ipaddr):
+        code = _generate_code()
+        signup_code = self.create(user=user, code=code, ipaddr=ipaddr)
+
+        return signup_code
+
+    def set_user_is_verified(self, code):
+        try:
+            signup_code = SignupCode.objects.get(code=code)
+            signup_code.user.is_verified = True
+            signup_code.user.save()
+            return True
+        except SignupCode.DoesNotExist:
+            pass
+
+        return False
+
+
+class SignupCode(AbstractBaseCode):
+    ipaddr = models.GenericIPAddressField(_('ip address'))
+
+    objects = SignupCodeManager()
+
+    def send_signup_email(self):
+        prefix = 'signup_email'
+        self.send_email(prefix)
+
+
+def send_multi_format_email(template_prefix, template_ctxt, target_email):
+    subject_file = 'authapiemail/%s_subject.txt' % template_prefix
+    txt_file = 'authapiemail/%s.txt' % template_prefix
+    html_file = 'authapiemail/%s.html' % template_prefix
+
+    subject = render_to_string(subject_file).strip()
+    from_email = settings.EMAIL_FROM
+    to = target_email
+    bcc_email = settings.EMAIL_BCC
+    text_content = render_to_string(txt_file, template_ctxt)
+    html_content = render_to_string(html_file, template_ctxt)
+    msg = EmailMultiAlternatives(subject, text_content, from_email, [to],
+                                 bcc=[bcc_email])
+    msg.attach_alternative(html_content, 'text/html')
+    msg.send()
+
+
+class PasswordResetCodeManager(models.Manager):
+    def create_password_reset_code(self, user):
+        code = _generate_code()
+        password_reset_code = self.create(user=user, code=code)
+
+        return password_reset_code
+
+    def get_expiry_period(self):
+        return EXPIRY_PERIOD
+
+class PasswordResetCode(AbstractBaseCode):
+    objects = PasswordResetCodeManager()
+
+    def send_password_reset_email(self):
+        prefix = 'password_reset_email'
+        self.send_email(prefix)

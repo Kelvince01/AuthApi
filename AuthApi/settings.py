@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 import environ
 import os
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,7 +39,7 @@ SECRET_KEY = env('SECRET_KEY')
 # False if not in os.environ because of casting above
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -56,6 +57,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'coreapi', # Coreapi for coreapi documentation
     'drf_yasg', # drf_yasg fro Swagger documentation
+    'rest_framework_simplejwt'
 ]
 
 MIDDLEWARE = [
@@ -74,7 +76,7 @@ ROOT_URLCONF = 'AuthApi.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'AuthApiApp/templates'),],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -180,7 +182,63 @@ REST_FRAMEWORK = {
     'NON_FIELD_ERRORS_KEY': 'error',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'AuthApiApp.backends.JWTAuthentication',
+        #'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning'
 }
+
+# Swagger doc
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'basic': {
+            'type': 'basic'
+        }
+    },
+}
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+AUTH_EMAIL_VERIFICATION = True
+
+EMAIL_FROM = env('AUTHEMAIL_DEFAULT_EMAIL_FROM') or 'kelvince05@gmail.com'
+EMAIL_BCC = env('AUTHEMAIL_DEFAULT_EMAIL_BCC') or 'themikrochip1@gmail.com'
+
+EMAIL_HOST = env('AUTHEMAIL_EMAIL_HOST') or 'smtp.gmail.com'
+EMAIL_PORT = env('AUTHEMAIL_EMAIL_PORT') or 587
+EMAIL_HOST_USER = env('AUTHEMAIL_EMAIL_HOST_USER') or 'kelvince05@gmail.com'
+EMAIL_HOST_PASSWORD = env('AUTHEMAIL_EMAIL_HOST_PASSWORD') or 'K@m@ki@kh@0111'
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+
+
+# https://github.com/davesque/django-rest-framework-simplejwt
+# default conf
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+
+    'ALGORITHM': 'HS256',
+    # 'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+
+    'JTI_CLAIM': 'jti',
+
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+}
+
+SIMPLE_JWT['SIGNING_KEY']: SECRET_KEY

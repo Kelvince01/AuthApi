@@ -80,8 +80,9 @@ class LoginSerializer(serializers.Serializer):
         # `authenticate` will return `None`. Raise an exception in this case.
         if user is None:
             raise serializers.ValidationError(
-                'A user with this email and password was not found.'
+                'Unable to login with provided credentials.'
             )
+            #'A user with this email and password was not found.'
 
         # Django provides a flag on our `User` model called `is_active`. The
         # purpose of this flag is to tell us whether the user has been banned
@@ -142,6 +143,11 @@ class LoginSerializerV2(serializers.Serializer):
         if user is None:
             raise serializers.ValidationError(
                 'A user with this email and password was not found.'
+            )
+
+        if not user.is_verified:
+            raise serializers.ValidationError(
+                'User account not verified.'
             )
 
         # Django provides a flag on our `User` model called `is_active`. The
@@ -220,3 +226,16 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=255)
+
+
+class PasswordResetVerifiedSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=40)
+    password = serializers.CharField(max_length=128)
+
+
+class PasswordChangeSerializer(serializers.Serializer):
+    password = serializers.CharField(max_length=128)

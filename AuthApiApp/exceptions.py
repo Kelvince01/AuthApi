@@ -1,3 +1,4 @@
+from rest_framework.exceptions import ErrorDetail
 from rest_framework.views import exception_handler
 
 def core_exception_handler(exc, context):
@@ -30,3 +31,19 @@ def _handle_generic_error(exc, context, response):
     }
 
     return response
+    
+    '''custom_data = {}
+
+    if isinstance(response.data, dict):
+        for key, value in response.data.items():
+            if value and isinstance(value, list) and isinstance(value[0], ErrorDetail):
+                response[key] = {
+                    "error": str(value[0]),
+                    "code": response.status_code # or any custom code that you need
+                }
+            else:
+                break
+
+    if custom_data:
+        response.data = custom_data
+    return response'''
