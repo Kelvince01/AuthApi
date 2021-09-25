@@ -2,6 +2,7 @@ from django.urls import path, include
 
 from .views import *
 from rest_framework_simplejwt import views as jwt_views
+from rest_framework.authtoken.views import obtain_auth_token
 
 
 app_name = 'authapiapp'
@@ -20,7 +21,8 @@ urlpatterns = [
          name='password-reset-verified'),
     path('password/change/', PasswordChange.as_view(),
          name='password-change'),
-     path('token/', jwt_views.TokenObtainPairView.as_view(), name='token-obtain-pair'),
+     path('token', obtain_auth_token, name="auth_token"),
+     path('token/pair/', jwt_views.TokenObtainPairView.as_view(), name='token-obtain-pair'),
     path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token-refresh'),
 ]
 
