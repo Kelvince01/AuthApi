@@ -27,7 +27,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install flake8
-        cd example_project
+        #cd example_project
         pip install -r requirements.txt
         pip install coverage
     - name: Lint with flake8
@@ -45,12 +45,12 @@ jobs:
         AUTHEMAIL_EMAIL_HOST_USER: ${{ secrets.AUTHEMAIL_EMAIL_HOST_USER }}
         AUTHEMAIL_EMAIL_PORT: ${{ secrets.AUTHEMAIL_EMAIL_PORT }}
       run: |
-        cd example_project
-        coverage run --source=.,authemail --omit="*/migrations/*" manage.py test authemail
+        #cd example_project
+        coverage run --source=.,authapiapp --omit="*/migrations/*" manage.py test authapiapp
         coverage report -m
         coverage xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
-        file: ./example_project/coverage.xml
-        name: codecov-django-rest-authemail
+        file: ./coverage.xml
+        name: codecov-django-rest-authapi
