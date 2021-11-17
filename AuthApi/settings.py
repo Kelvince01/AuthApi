@@ -203,13 +203,13 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 AUTH_EMAIL_VERIFICATION = True
 
-EMAIL_FROM = env('AUTHEMAIL_DEFAULT_EMAIL_FROM') or 'kelvince05@gmail.com'
-EMAIL_BCC = env('AUTHEMAIL_DEFAULT_EMAIL_BCC') or 'themikrochip1@gmail.com'
+EMAIL_FROM = env('AUTHEMAIL_DEFAULT_EMAIL_FROM') or '<email>'
+EMAIL_BCC = env('AUTHEMAIL_DEFAULT_EMAIL_BCC') or '<email>'
 
 EMAIL_HOST = env('AUTHEMAIL_EMAIL_HOST') or 'smtp.gmail.com'
 EMAIL_PORT = env('AUTHEMAIL_EMAIL_PORT') or 587
-EMAIL_HOST_USER = env('AUTHEMAIL_EMAIL_HOST_USER') or 'kelvince05@gmail.com'
-EMAIL_HOST_PASSWORD = env('AUTHEMAIL_EMAIL_HOST_PASSWORD') or 'K@m@ki@kh@0111'
+EMAIL_HOST_USER = env('AUTHEMAIL_EMAIL_HOST_USER') or '<email>'
+EMAIL_HOST_PASSWORD = env('AUTHEMAIL_EMAIL_HOST_PASSWORD') or '<password>'
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 
